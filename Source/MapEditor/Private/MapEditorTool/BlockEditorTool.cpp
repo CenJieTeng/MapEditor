@@ -82,52 +82,9 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 					return;
 				}
 
-				FVector NewLocationOffset;
 				if (Result.Component.IsValid())
 				{
-					FVector Offset = Result.ImpactPoint - (Result.Component->GetComponentLocation() + FVector(0, 0, 50.0f));
-					//UE_LOG(LogTemp, Warning, TEXT("Comp: %f %f %f"), Result.Component->GetComponentLocation().X, Result.Component->GetComponentLocation().Y, Result.Component->GetComponentLocation().Z);
-					//UE_LOG(LogTemp, Warning, TEXT("Offset: %f %f %f"), Offset.X, Offset.Y, Offset.Z);
-					if (FMath::Abs(Offset.X) >= FMath::Abs(Offset.Y) && FMath::Abs(Offset.X) >= FMath::Abs(Offset.Z))
-					{
-						if (Offset.X > 0)
-						{
-							UE_LOG(LogTemp, Warning, TEXT("Right"));
-							NewLocationOffset = FVector(100.0f, 0, 0);
-						}
-						else
-						{
-							UE_LOG(LogTemp, Warning, TEXT("Left"));
-							NewLocationOffset = FVector(-100.0f, 0, 0);
-						}
-					}
-					else if (FMath::Abs(Offset.Y) >= FMath::Abs(Offset.X) && FMath::Abs(Offset.Y) >= FMath::Abs(Offset.Z))
-					{
-						if (Offset.Y > 0)
-						{
-							UE_LOG(LogTemp, Warning, TEXT("Front"));
-							NewLocationOffset = FVector(0, 100.0f, 0);
-						}
-						else
-						{
-							UE_LOG(LogTemp, Warning, TEXT("Back"));
-							NewLocationOffset = FVector(0, -100.0f, 0);
-						}
-					}
-					else
-					{
-						if (Offset.Z > 0)
-						{
-							UE_LOG(LogTemp, Warning, TEXT("Up"));
-							NewLocationOffset = FVector(0, 0, 100.0f);
-						}
-						else
-						{
-							UE_LOG(LogTemp, Warning, TEXT("Down"));
-							NewLocationOffset = FVector(0, 0, -100.0f);
-						}
-					}
-
+					FVector NewLocationOffset = (100 * Result.Normal);
 					UStaticMeshComponent* Component = NewObject<UStaticMeshComponent>(MapEditorActor.Get(), ComponentName, RF_Transactional);
 					Component->SetStaticMesh(DefaultMesh);
 					Component->SetMaterial(0, DefaultMaterial);
