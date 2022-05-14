@@ -1,4 +1,6 @@
 # Build and Release Folders
+Binaries/
+Intermediate/
 bin-debug/
 bin-release/
 [Oo]bj/
