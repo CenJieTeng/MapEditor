@@ -60,8 +60,7 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 
 	if (MapEditorActor.IsValid())
 	{
-		static int count = 1;
-		FName ComponentName = FName(FString::FromInt(count));
+		FName ComponentName = FName(FString::FromInt(MapEditorActor->GetBlockIdCount()));
 		
 		if (DefaultMesh)
 		{
@@ -91,7 +90,7 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 					Component->SetWorldLocation(Result.Component->GetComponentLocation() + NewLocationOffset);
 					Component->RegisterComponent();
 					MapEditorActor->AddInstanceComponent(Component);
-					count += 1;
+					MapEditorActor->SetBlockIdCount(MapEditorActor->GetBlockIdCount() + 1);
 				}
 			}
 		}

@@ -15,6 +15,8 @@ public:
 	// Sets default values for this actor's properties
 	AMapEditorActor();
 
+	virtual void PostRegisterAllComponents() override;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -23,7 +25,12 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	inline int GetBlockIdCount() const { return BlockIdCount; }
+	inline void SetBlockIdCount(int InValue) { BlockIdCount = InValue; }
+
 private:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* StaticMesh;
+
+	int BlockIdCount;
 };

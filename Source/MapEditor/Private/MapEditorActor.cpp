@@ -12,6 +12,8 @@ AMapEditorActor::AMapEditorActor()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	BlockIdCount = 0;
+
 	USceneComponent* SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComponent"));
 	RootComponent = SceneComponent;
 
@@ -27,6 +29,17 @@ AMapEditorActor::AMapEditorActor()
 	{
 		StaticMesh->SetMaterial(0, DefaultMaterial.Object);
 	}
+}
+
+void AMapEditorActor::PostRegisterAllComponents()
+{
+	FNavigationSystem::OnActorRegistered(*this);
+
+	for (auto v : this->GetInstanceComponents())
+	{
+		BlockIdCount = FMath::Max(BlockIdCount, FCString::Atoi(*(v->GetFName().ToString())));
+	}
+	BlockIdCount += 1;
 }
 
 // Called when the game starts or when spawned
