@@ -43,6 +43,19 @@ public class MapEditor : ModuleRules
 				"LevelEditor",
 				"InteractiveToolsFramework",
 				"EditorInteractiveToolsFramework",
+
+				"MeshConversion",
+				"MeshDescription",
+				"StaticMeshDescription",
+				"ModelingOperators",
+				"ModelingComponents",
+
+				//GeometryProcessing
+				"GeometricObjects",
+				"GeometryAlgorithms",
+				"DynamicMesh",
+				"MeshConversion",
+
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

@@ -7,6 +7,7 @@
 #include "BaseTools/SingleClickTool.h"
 #include "MapEditorActor.h"
 #include "MapEditorEnum.h"
+#include "PreviewMesh.h"
 #include "BlockEditorTool.generated.h"
 
 /**
@@ -41,7 +42,7 @@ public:
  *	
  */
 UCLASS()
-class UBlockEditorTool : public USingleClickTool
+class UBlockEditorTool : public USingleClickTool, public IHoverBehaviorTarget
 {
 	GENERATED_BODY()
 
@@ -50,7 +51,17 @@ public:
 
 	virtual void Setup() override;
 
+	virtual void Shutdown(EToolShutdownType ShutdownType) override;
+
 	virtual void OnClicked(const FInputDeviceRay& ClickPos) override;
+
+	// IHoverBehaviorTarget interface
+	virtual FInputRayHit BeginHoverSequenceHitTest(const FInputDeviceRay& PressPos) override;
+	virtual void OnBeginHover(const FInputDeviceRay& DevicePos) override;
+	virtual bool OnUpdateHover(const FInputDeviceRay& DevicePos) override;
+	virtual void OnEndHover() override;
+
+	void GenerateMesh(FDynamicMesh3* OutMesh) const;
 
 public:
 	//UPROPERTY()
@@ -63,6 +74,9 @@ public:
 	EMapEditorAction CurAction;
 
 private:
-	static UStaticMesh* DefaultMesh;
-	static UMaterialInterface* DefaultMaterial;
+	UStaticMesh* DefaultMesh;
+	UMaterialInterface* DefaultMaterial;
+	UMaterialInterface* PreviewMaterial;
+
+	UPreviewMesh* PreviewMesh;
 };
