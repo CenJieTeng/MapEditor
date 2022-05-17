@@ -86,30 +86,21 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 	}
 	UE_LOG(LogTemp, Warning, TEXT("BlockEditorTool OnClick"));
 
-	if (MapEditorActor.IsValid())
+	if (MapEditorActor.IsValid() && DefaultMesh)
 	{
-		FName ComponentName = FName(FString::FromInt(MapEditorActor->GetBlockIdCount()));
-		
-		if (DefaultMesh)
-		{
-			FVector RayStart = ClickPos.WorldRay.Origin;
-			FVector RayEnd = ClickPos.WorldRay.PointAt(999999);
-			FCollisionObjectQueryParams QueryParams(FCollisionObjectQueryParams::AllObjects);
-			FHitResult Result;
-			bool bHitWorld = TargetWorld->LineTraceSingleByObjectType(Result, RayStart, RayEnd, QueryParams);
+		FVector RayStart = ClickPos.WorldRay.Origin;
+		FVector RayEnd = ClickPos.WorldRay.PointAt(999999);
+		FCollisionObjectQueryParams QueryParams(FCollisionObjectQueryParams::AllObjects);
+		FHitResult Result;
+		bool bHitWorld = TargetWorld->LineTraceSingleByObjectType(Result, RayStart, RayEnd, QueryParams);
 
-			if (Result.Actor.IsValid() && Result.Actor->GetUniqueID() == MapEditorActor->GetUniqueID() && bHitWorld)
+		if (Result.Actor.IsValid() && Result.Component.IsValid() && Result.Actor->GetUniqueID() == MapEditorActor->GetUniqueID() && bHitWorld)
+		{
+			switch (CurAction)
 			{
-				if (CurAction == EMapEditorAction::del)
+				case EMapEditorAction::add:
 				{
-					if (Result.Component.IsValid())
-					{
-						Result.Component->DestroyComponent();
-					}
-					return;
-				}
-				else if (Result.Component.IsValid())
-				{
+					FName ComponentName = FName(FString::FromInt(MapEditorActor->GetBlockIdCount()));
 					FVector NewLocationOffset = (100 * Result.Normal);
 					UStaticMeshComponent* Component = NewObject<UStaticMeshComponent>(MapEditorActor.Get(), ComponentName, RF_Transactional);
 					Component->SetStaticMesh(DefaultMesh);
@@ -124,6 +115,20 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 					Component->RegisterComponent();
 					MapEditorActor->AddInstanceComponent(Component);
 					MapEditorActor->SetBlockIdCount(MapEditorActor->GetBlockIdCount() + 1);
+					break;
+				}
+				case EMapEditorAction::del:
+				{
+					Result.Component->DestroyComponent();
+					break;
+				}
+				case EMapEditorAction::replace:
+				{
+					if (Properties->CustomMaterial.IsValid())
+					{
+						Result.Component->SetMaterial(0, Properties->CustomMaterial.Get());
+					}
+					break;
 				}
 			}
 		}
@@ -142,39 +147,42 @@ FInputRayHit UBlockEditorTool::BeginHoverSequenceHitTest(const FInputDeviceRay& 
 
 void UBlockEditorTool::OnBeginHover(const FInputDeviceRay& DevicePos)
 {
-	//UpdatePreviewPosition(DevicePos);
 }
 
 bool UBlockEditorTool::OnUpdateHover(const FInputDeviceRay& DevicePos)
 {
 	if (Properties->bShowPreviewMesh && MapEditorActor.IsValid())
 	{
-		//UpdatePreviewPosition(DevicePos);
 		FVector RayStart = DevicePos.WorldRay.Origin;
 		FVector RayEnd = DevicePos.WorldRay.PointAt(999999);
 		FCollisionObjectQueryParams QueryParams(FCollisionObjectQueryParams::AllObjects);
 		FHitResult Result;
 		bool bHitWorld = TargetWorld->LineTraceSingleByObjectType(Result, RayStart, RayEnd, QueryParams);
-		if (Result.Actor.IsValid() && Result.Actor->GetUniqueID() == MapEditorActor->GetUniqueID() && bHitWorld)
+		if (Result.Actor.IsValid() && Result.Component.IsValid() && Result.Actor->GetUniqueID() == MapEditorActor->GetUniqueID() && bHitWorld)
 		{
-			if (CurAction == EMapEditorAction::del)
+			switch (CurAction)
 			{
-				if (Properties->bWireFrame && Result.Component.IsValid())
+				case EMapEditorAction::add:
 				{
+					FVector NewLocationOffset = (100 * Result.Normal);
 					PreviewMesh->SetVisible(true);
 					FTransform NewTransform;
-					NewTransform.SetLocation(Result.Component->GetComponentLocation() + FVector(0.0f, 0.0, 50.0f));
+					NewTransform.SetLocation(Result.Component->GetComponentLocation() + FVector(0.0f, 0.0, 50.0f) + NewLocationOffset);
 					PreviewMesh->SetTransform(NewTransform);
+					break;
 				}
-				return true;
-			}
-			else if (Result.Component.IsValid())
-			{
-				FVector NewLocationOffset = (100 * Result.Normal);
-				PreviewMesh->SetVisible(true);
-				FTransform NewTransform;
-				NewTransform.SetLocation(Result.Component->GetComponentLocation() + FVector(0.0f, 0.0, 50.0f) + NewLocationOffset);
-				PreviewMesh->SetTransform(NewTransform);
+				case EMapEditorAction::del:
+				case EMapEditorAction::replace:
+				{
+					if (Properties->bWireFrame && Result.Component.IsValid())
+					{
+						PreviewMesh->SetVisible(true);
+						FTransform NewTransform;
+						NewTransform.SetLocation(Result.Component->GetComponentLocation() + FVector(0.0f, 0.0, 50.0f));
+						PreviewMesh->SetTransform(NewTransform);
+					}
+					return true;
+				}
 			}
 		}
 		else

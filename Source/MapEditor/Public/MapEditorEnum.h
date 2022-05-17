@@ -5,4 +5,5 @@ enum EMapEditorAction
 	none,
 	add,
 	del,
+	replace,
 };

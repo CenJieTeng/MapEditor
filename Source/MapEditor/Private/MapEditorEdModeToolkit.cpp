@@ -15,7 +15,7 @@
 
 #define LOCTEXT_NAMESPACE "FMapEditorEdModeToolkit"
 
-FName FMapEditorEdModeToolkit::ActionNames[] = { "None", "Add Block", "Del Block" };
+FName FMapEditorEdModeToolkit::ActionNames[] = { "None", "Add Block", "Del Block", "Replace Material"};
 
 FMapEditorEdModeToolkit::FMapEditorEdModeToolkit()
 {
@@ -94,6 +94,11 @@ void FMapEditorEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHo
 					.Padding(5)
 					[
 						MakeCheckBox(EMapEditorAction::del, "Group1")
+					]
+					+ SWrapBox::Slot()
+					.Padding(5)
+					[
+						MakeCheckBox(EMapEditorAction::replace, "Group1")
 					]
 				]
 			]
@@ -228,6 +233,7 @@ void FMapEditorEdModeToolkit::HandleCheckBoxChange()
 	}
 	case EMapEditorAction::add:
 	case EMapEditorAction::del:
+	case EMapEditorAction::replace:
 	{
 		StartTool("BlockEditorTool");
 		break;
