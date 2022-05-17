@@ -27,16 +27,23 @@ public:
 	virtual UInteractiveTool* BuildTool(const FToolBuilderState& SceneState) const override;
 };
 
-//UCLASS()
-//class UBlockEditorToolProperties : public UInteractiveToolPropertySet
-//{
-//	GENERATED_BODY()
-//
-//public:
-//	UBlockEditorToolProperties();
-//
-//	TWeakObjectPtr<AMapEditorActor> MapEditorActor;
-//};
+UCLASS()
+class UBlockEditorToolProperties : public UInteractiveToolPropertySet
+{
+	GENERATED_BODY()
+
+public:
+	UBlockEditorToolProperties();
+
+	UPROPERTY(EditAnywhere, NonTransactional, Category = Options)
+	bool bShowPreviewMesh = true;
+
+	UPROPERTY(EditAnywhere, NonTransactional, Category = Material)
+	TWeakObjectPtr<UMaterialInterface> CustomMaterial;
+
+	UPROPERTY(EditAnywhere, NonTransactional, Category = Material)
+	bool bWireFrame = true;
+};
 
 /**
  *	
@@ -55,17 +62,25 @@ public:
 
 	virtual void OnClicked(const FInputDeviceRay& ClickPos) override;
 
+	virtual void OnPropertyModified(UObject* PropertySet, FProperty* Property) override;
+
 	// IHoverBehaviorTarget interface
 	virtual FInputRayHit BeginHoverSequenceHitTest(const FInputDeviceRay& PressPos) override;
 	virtual void OnBeginHover(const FInputDeviceRay& DevicePos) override;
 	virtual bool OnUpdateHover(const FInputDeviceRay& DevicePos) override;
 	virtual void OnEndHover() override;
 
-	void GenerateMesh(FDynamicMesh3* OutMesh) const;
+	virtual void SetWorld(UWorld* World);
+	virtual void SetMapEditorActor(TWeakObjectPtr<AMapEditorActor> Actor);
+	virtual void SetAction(EMapEditorAction InAction);
 
-public:
-	//UPROPERTY()
-	//UBlockEditorToolProperties* Properties;
+protected:
+	virtual void GenerateMesh(FDynamicMesh3* OutMesh) const;
+	virtual void UpdatePreviewMesh();
+
+protected:
+	UPROPERTY()
+	UBlockEditorToolProperties* Properties;
 
 	UWorld* TargetWorld;
 
@@ -76,7 +91,6 @@ public:
 private:
 	UStaticMesh* DefaultMesh;
 	UMaterialInterface* DefaultMaterial;
-	UMaterialInterface* PreviewMaterial;
-
 	UPreviewMesh* PreviewMesh;
+	UMaterialInterface* PreviewMaterial;
 };

@@ -37,6 +37,23 @@ void FMapEditorEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHo
 		}
 	};
 
+	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+
+	FDetailsViewArgs DetailsViewArgs(
+		/*bUpdateFromSelection=*/ false,
+		/*bLockable=*/ false,
+		/*bAllowSearch=*/ false,
+		FDetailsViewArgs::HideNameArea,
+		/*bHideSelectionTip=*/ true,
+		/*InNotifyHook=*/ nullptr,
+		/*InSearchInitialKeyFocus=*/ false,
+		/*InViewIdentifier=*/ NAME_None);
+	DetailsViewArgs.DefaultsOnlyVisibility = EEditDefaultsOnlyNodeVisibility::Show;
+	DetailsViewArgs.bShowOptions = false;
+	DetailsViewArgs.bAllowMultipleTopLevelObjects = true;
+
+	DetailsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
+
 	TArray<AActor*> arr;
 	UGameplayStatics::GetAllActorsOfClass(GEditor->GetWorldContexts()[0].World(), AMapEditorActor::StaticClass(), arr);
 	for (auto v : arr)
@@ -127,6 +144,10 @@ void FMapEditorEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHo
 					]
 				]
 			]
+			+ SVerticalBox::Slot().HAlign(HAlign_Fill).FillHeight(1.f)
+				[
+					DetailsView->AsShared()
+				]
 		];
 		
 	FModeToolkit::Init(InitToolkitHost);
@@ -224,8 +245,17 @@ FReply FMapEditorEdModeToolkit::StartTool(const FString& ToolTypeIdentifier)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Starting Tool Type %s"), *ToolTypeIdentifier);
-		GetMapEditorMode()->GetToolManager()->ActivateTool(EToolSide::Left);
+		FString ActiveToolName = GetMapEditorMode()->GetToolManager()->GetActiveToolName(EToolSide::Left);
+		if (ActiveToolName != ToolTypeIdentifier)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Starting Tool Type %s"), *ToolTypeIdentifier);
+			GetMapEditorMode()->GetToolManager()->ActivateTool(EToolSide::Left);
+			UBlockEditorTool* CurTool = (UBlockEditorTool*)GetMapEditorMode()->GetToolManager()->GetActiveTool(EToolSide::Left);
+			if (CurTool)
+			{
+				DetailsView->SetObjects(CurTool->GetToolProperties(true));
+			}
+		}
 		HandleSelectEditorMapActor();
 	}
 
@@ -237,6 +267,7 @@ FReply FMapEditorEdModeToolkit::EndTool(EToolShutdownType ShutdownType)
 	UE_LOG(LogTemp, Warning, TEXT("EndTool"));
 
 	GetMapEditorMode()->GetToolManager()->DeactivateTool(EToolSide::Left, ShutdownType);
+	DetailsView->SetObject(nullptr);
 
 	return FReply::Handled();
 }
@@ -272,12 +303,12 @@ void FMapEditorEdModeToolkit::HandleSelectEditorMapActor()
 	if (CurSelect >= 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Select MapEditorActor"));
-		CurTool->MapEditorActor = (AMapEditorActor*)MapEditorActorArray[CurSelect].Get();
-		CurTool->CurAction = CurAction;
+		CurTool->SetMapEditorActor((AMapEditorActor*)MapEditorActorArray[CurSelect].Get());
+		CurTool->SetAction(CurAction);
 	}
 	else
 	{
-		CurTool->MapEditorActor = nullptr;
+		CurTool->SetMapEditorActor(nullptr);
 	}
 }
 

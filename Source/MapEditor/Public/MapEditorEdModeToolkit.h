@@ -42,6 +42,7 @@ private:
 
 private:
 	TSharedPtr<SWidget> ToolkitWidget;
+	TSharedPtr<IDetailsView> DetailsView;
 
 	TMap<FString, TArray<TSharedPtr<SCheckBox>>> CheckBoxGroupMap;
 	EMapEditorAction CurAction;
@@ -51,7 +52,4 @@ private:
 	int CurSelect;
 	FDelegateHandle AddActorHandler;
 	FDelegateHandle deleteActorHandler;
-	
-
-	
 };

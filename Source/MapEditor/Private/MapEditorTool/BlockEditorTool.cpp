@@ -23,7 +23,7 @@ bool UBlockEditorToolBuilder::CanBuildTool(const FToolBuilderState& SceneState) 
 UInteractiveTool* UBlockEditorToolBuilder::BuildTool(const FToolBuilderState& SceneState) const
 {
 	UBlockEditorTool* NewTool = NewObject<UBlockEditorTool>(SceneState.ToolManager);
-	NewTool->TargetWorld = SceneState.World;
+	NewTool->SetWorld(SceneState.World);
 	return NewTool;
 }
 
@@ -31,10 +31,9 @@ UInteractiveTool* UBlockEditorToolBuilder::BuildTool(const FToolBuilderState& Sc
 * Tool
 */
 
-//UBlockEditorToolProperties::UBlockEditorToolProperties()
-//{
-//	MapEditorActor = nullptr;
-//}
+UBlockEditorToolProperties::UBlockEditorToolProperties()
+{
+}
 
 UBlockEditorTool::UBlockEditorTool()
 {
@@ -50,8 +49,9 @@ void UBlockEditorTool::Setup()
 {
 	USingleClickTool::Setup();
 
-	//Properties = NewObject<UBlockEditorToolProperties>();
-	//AddToolPropertySource(Properties);
+	Properties = NewObject<UBlockEditorToolProperties>(this);
+	AddToolPropertySource(Properties);
+	Properties->RestoreProperties(this);
 
 	UMouseHoverBehavior* HoverBehavior = NewObject<UMouseHoverBehavior>(this);
 	HoverBehavior->Initialize(this);
@@ -63,9 +63,7 @@ void UBlockEditorTool::Setup()
 	PreviewMesh->SetMaterial(PreviewMaterial);
 	PreviewMesh->SetVisible(false);
 
-	FDynamicMesh3 NewMesh;
-	GenerateMesh(&NewMesh);
-	PreviewMesh->UpdatePreview(&NewMesh);
+	UpdatePreviewMesh();
 
 	MapEditorActor = nullptr;
 }
@@ -75,6 +73,8 @@ void UBlockEditorTool::Shutdown(EToolShutdownType ShutdownType)
 	PreviewMesh->SetVisible(false);
 	PreviewMesh->Disconnect();
 	PreviewMesh = nullptr;
+
+	Properties->SaveProperties(this);
 }
 
 void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
@@ -108,13 +108,18 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 					}
 					return;
 				}
-
-				if (Result.Component.IsValid())
+				else if (Result.Component.IsValid())
 				{
 					FVector NewLocationOffset = (100 * Result.Normal);
 					UStaticMeshComponent* Component = NewObject<UStaticMeshComponent>(MapEditorActor.Get(), ComponentName, RF_Transactional);
 					Component->SetStaticMesh(DefaultMesh);
-					Component->SetMaterial(0, DefaultMaterial);
+					if (Properties->CustomMaterial.IsValid())
+					{
+						Component->SetMaterial(0, Properties->CustomMaterial.Get());
+					}
+					else {
+						Component->SetMaterial(0, DefaultMaterial);
+					}
 					Component->SetWorldLocation(Result.Component->GetComponentLocation() + NewLocationOffset);
 					Component->RegisterComponent();
 					MapEditorActor->AddInstanceComponent(Component);
@@ -123,6 +128,11 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 			}
 		}
 	}
+}
+
+void UBlockEditorTool::OnPropertyModified(UObject* PropertySet, FProperty* Property)
+{
+	UpdatePreviewMesh();
 }
 
 FInputRayHit UBlockEditorTool::BeginHoverSequenceHitTest(const FInputDeviceRay& PressPos)
@@ -137,10 +147,9 @@ void UBlockEditorTool::OnBeginHover(const FInputDeviceRay& DevicePos)
 
 bool UBlockEditorTool::OnUpdateHover(const FInputDeviceRay& DevicePos)
 {
-	if (MapEditorActor.IsValid())
+	if (Properties->bShowPreviewMesh && MapEditorActor.IsValid())
 	{
 		//UpdatePreviewPosition(DevicePos);
-		PreviewMesh->SetVisible(true);
 		FVector RayStart = DevicePos.WorldRay.Origin;
 		FVector RayEnd = DevicePos.WorldRay.PointAt(999999);
 		FCollisionObjectQueryParams QueryParams(FCollisionObjectQueryParams::AllObjects);
@@ -150,7 +159,7 @@ bool UBlockEditorTool::OnUpdateHover(const FInputDeviceRay& DevicePos)
 		{
 			if (CurAction == EMapEditorAction::del)
 			{
-				if (Result.Component.IsValid())
+				if (Properties->bWireFrame && Result.Component.IsValid())
 				{
 					PreviewMesh->SetVisible(true);
 					FTransform NewTransform;
@@ -159,8 +168,7 @@ bool UBlockEditorTool::OnUpdateHover(const FInputDeviceRay& DevicePos)
 				}
 				return true;
 			}
-
-			if (Result.Component.IsValid())
+			else if (Result.Component.IsValid())
 			{
 				FVector NewLocationOffset = (100 * Result.Normal);
 				PreviewMesh->SetVisible(true);
@@ -173,6 +181,10 @@ bool UBlockEditorTool::OnUpdateHover(const FInputDeviceRay& DevicePos)
 		{
 			PreviewMesh->SetVisible(false);
 		}
+	}
+	else
+	{
+		PreviewMesh->SetVisible(false);
 	}
 	
 	return true;
@@ -188,4 +200,41 @@ void UBlockEditorTool::GenerateMesh(FDynamicMesh3* OutMesh) const
 	BoxGen.Box = FOrientedBox3d(FVector3d::Zero(), 0.5 * FVector3d(100.f, 100.f, 100.0f));
 	BoxGen.Generate();
 	OutMesh->Copy(&BoxGen);
+}
+
+void UBlockEditorTool::SetWorld(UWorld* World)
+{
+	TargetWorld = World;
+}
+
+void UBlockEditorTool::SetMapEditorActor(TWeakObjectPtr<AMapEditorActor> Actor)
+{
+	MapEditorActor = Actor;
+}
+
+void UBlockEditorTool::SetAction(EMapEditorAction InAction)
+{
+	CurAction = InAction;
+}
+
+void UBlockEditorTool::UpdatePreviewMesh()
+{
+	if (Properties->bWireFrame)
+	{
+		PreviewMesh->SetMaterial(0, PreviewMaterial);
+	}
+	else
+	{
+		if (Properties->CustomMaterial.IsValid())
+		{
+			PreviewMesh->SetMaterial(0, Properties->CustomMaterial.Get());
+		}
+		else {
+			PreviewMesh->SetMaterial(0, DefaultMaterial);
+		}
+	}
+
+	FDynamicMesh3 NewMesh;
+	GenerateMesh(&NewMesh);
+	PreviewMesh->UpdatePreview(&NewMesh);
 }
