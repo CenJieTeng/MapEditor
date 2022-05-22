@@ -34,7 +34,7 @@ private:
 	FReply StartTool(const FString& ToolTypeIdentifier);
 	FReply EndTool(EToolShutdownType ShutdownType);
 
-	void HandleCheckBoxChange();
+	void HandleCheckBoxChange(ECheckBoxState InState, EMapEditorAction action, FString GroupName);
 
 	void HandleSelectEditorMapActor();
 	void HandleLevelActorAdded(AActor* InActor);

@@ -66,6 +66,13 @@ void FMapEditorEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHo
 	AddActorHandler = GEditor->OnLevelActorAdded().AddRaw(this, &FMapEditorEdModeToolkit::HandleLevelActorAdded);
 	deleteActorHandler = GEditor->OnLevelActorDeleted().AddRaw(this, &FMapEditorEdModeToolkit::HandleLevelActorDeleted);
 
+	GetMapEditorMode()->GetToolManager()->OnToolEnded.AddLambda(
+		[this](UInteractiveToolManager* ToolManager, UInteractiveTool* Tool) {
+			CurAction = EMapEditorAction::none;
+			TArray<TSharedPtr<SCheckBox>>* CheckBoxArray = CheckBoxGroupMap.Find("Group1");
+			(*CheckBoxArray)[3]->ToggleCheckedState();
+		});
+
 	SAssignNew(ToolkitWidget, SScrollBarTrack)
 		.IsEnabled_Static(&Locals::IsWidgetEnabled)
 		.TopSlot()
@@ -184,31 +191,7 @@ TSharedRef<SWidget> FMapEditorEdModeToolkit::MakeCheckBox(EMapEditorAction actio
 		SNew(SCheckBox)
 		.Tag(ActionNames[action])
 		.IsChecked(CurAction == action ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-		.OnCheckStateChanged_Lambda([this, action, GroupName](ECheckBoxState InState) {
-			//强制至少勾选一个
-			if (InState == ECheckBoxState::Unchecked)
-			{
-				for (auto CheckBox : CheckBoxGroupMap[GroupName])
-				{
-					if (CheckBox->GetTag().IsEqual(ActionNames[action]))
-					{
-						CheckBox->SetIsChecked(ECheckBoxState::Checked);
-						break;
-					}
-				}
-				return;
-			}
-			//取消勾选同一组的其他CheckBox
-			for (auto CheckBox : CheckBoxGroupMap[GroupName])
-			{
-				if (CheckBox->GetTag().IsEqual(ActionNames[action]))
-					continue;
-				CheckBox->SetIsChecked(ECheckBoxState::Unchecked);
-			}
-			CurAction = action;
-			//TODO: 自定义点击CheckBox行为,应该由外部传入
-			HandleCheckBoxChange();
-		})
+		.OnCheckStateChanged_Raw(this, &FMapEditorEdModeToolkit::HandleCheckBoxChange, action, GroupName)
 		[
 			SNew(STextBlock).Text(FText::FromName(ActionNames[action]))
 		];
@@ -222,8 +205,30 @@ TSharedRef<SWidget> FMapEditorEdModeToolkit::MakeCheckBox(EMapEditorAction actio
 	return CheckBox;
 }
 
-void FMapEditorEdModeToolkit::HandleCheckBoxChange()
+void FMapEditorEdModeToolkit::HandleCheckBoxChange(ECheckBoxState InState, EMapEditorAction action, FString GroupName)
 {
+	//强制至少勾选一个
+	if (InState == ECheckBoxState::Unchecked)
+	{
+		for (auto CheckBox : CheckBoxGroupMap[GroupName])
+		{
+			if (CheckBox->GetTag().IsEqual(ActionNames[action]))
+			{
+				CheckBox->SetIsChecked(ECheckBoxState::Checked);
+				break;
+			}
+		}
+		return;
+	}
+	//取消勾选同一组的其他CheckBox
+	for (auto CheckBox : CheckBoxGroupMap[GroupName])
+	{
+		if (CheckBox->GetTag().IsEqual(ActionNames[action]))
+			continue;
+		CheckBox->SetIsChecked(ECheckBoxState::Unchecked);
+	}
+	CurAction = action;
+
 	switch (CurAction)
 	{
 	case EMapEditorAction::none:

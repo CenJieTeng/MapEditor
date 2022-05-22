@@ -102,6 +102,8 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 				{
 					FName ComponentName = FName(FString::FromInt(MapEditorActor->GetBlockIdCount()));
 					FVector NewLocationOffset = (100 * Result.Normal);
+					GEditor->BeginTransaction(FText::FromString("Add Block"));
+					MapEditorActor->Modify();
 					UStaticMeshComponent* Component = NewObject<UStaticMeshComponent>(MapEditorActor.Get(), ComponentName, RF_Transactional);
 					Component->SetStaticMesh(DefaultMesh);
 					if (Properties->CustomMaterial.IsValid())
@@ -115,11 +117,15 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 					Component->RegisterComponent();
 					MapEditorActor->AddInstanceComponent(Component);
 					MapEditorActor->SetBlockIdCount(MapEditorActor->GetBlockIdCount() + 1);
+					GEditor->EndTransaction();
 					break;
 				}
 				case EMapEditorAction::del:
 				{
+					GEditor->BeginTransaction(FText::FromString("Del Block"));
+					MapEditorActor->Modify();
 					Result.Component->DestroyComponent();
+					GEditor->EndTransaction();
 					break;
 				}
 				case EMapEditorAction::replace:
