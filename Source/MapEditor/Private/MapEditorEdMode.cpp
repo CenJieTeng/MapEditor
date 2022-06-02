@@ -111,6 +111,23 @@ bool FMapEditorEdMode::MouseLeave(FEditorViewportClient* ViewportClient, FViewpo
 
 bool FMapEditorEdMode::InputKey(FEditorViewportClient* ViewportClient, FViewport* Viewport, FKey Key, EInputEvent Event)
 {
+	if (Key == EKeys::One && Event == EInputEvent::IE_Pressed && ViewportClient->IsCtrlPressed())
+	{
+		((FMapEditorEdModeToolkit*)Toolkit.Get())->ToggleCheckBox(EMapEditorAction::none, "Group1");
+	}
+	if (Key == EKeys::Two && Event == EInputEvent::IE_Pressed && ViewportClient->IsCtrlPressed())
+	{
+		((FMapEditorEdModeToolkit*)Toolkit.Get())->ToggleCheckBox(EMapEditorAction::add, "Group1");
+	}
+	if (Key == EKeys::Three && Event == EInputEvent::IE_Pressed && ViewportClient->IsCtrlPressed())
+	{
+		((FMapEditorEdModeToolkit*)Toolkit.Get())->ToggleCheckBox(EMapEditorAction::del, "Group1");
+	}
+	if (Key == EKeys::Four && Event == EInputEvent::IE_Pressed && ViewportClient->IsCtrlPressed())
+	{
+		((FMapEditorEdModeToolkit*)Toolkit.Get())->ToggleCheckBox(EMapEditorAction::replace, "Group1");
+	}
+
 	bool bHandled = FEdMode::InputKey(ViewportClient, Viewport, Key, Event);
 	bHandled |= ToolsContext->InputKey(ViewportClient, Viewport, Key, Event);
 	return bHandled;

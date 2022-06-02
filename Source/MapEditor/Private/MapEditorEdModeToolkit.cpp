@@ -68,9 +68,7 @@ void FMapEditorEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHo
 
 	GetMapEditorMode()->GetToolManager()->OnToolEnded.AddLambda(
 		[this](UInteractiveToolManager* ToolManager, UInteractiveTool* Tool) {
-			CurAction = EMapEditorAction::none;
-			TArray<TSharedPtr<SCheckBox>>* CheckBoxArray = CheckBoxGroupMap.Find("Group1");
-			(*CheckBoxArray)[3]->ToggleCheckedState();
+			ToggleCheckBox(EMapEditorAction::none, "Group1");
 		});
 
 	SAssignNew(ToolkitWidget, SScrollBarTrack)
@@ -203,6 +201,19 @@ TSharedRef<SWidget> FMapEditorEdModeToolkit::MakeCheckBox(EMapEditorAction actio
 		CheckBoxGroupMap.Add(GroupName, Arr);
 	}
 	return CheckBox;
+}
+
+void FMapEditorEdModeToolkit::ToggleCheckBox(EMapEditorAction action, FString GroupName)
+{
+	CurAction = action;
+	for (auto CheckBox : CheckBoxGroupMap[GroupName])
+	{
+		if (CheckBox->GetTag().IsEqual(ActionNames[CurAction]))
+		{
+			CheckBox->ToggleCheckedState();
+			break;
+		}
+	}
 }
 
 void FMapEditorEdModeToolkit::HandleCheckBoxChange(ECheckBoxState InState, EMapEditorAction action, FString GroupName)

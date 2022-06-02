@@ -29,6 +29,7 @@ public:
 	FMapEditorEdMode* GetMapEditorMode() const;
 
 	TSharedRef<SWidget> MakeCheckBox(EMapEditorAction action, FString GroupName);
+	void ToggleCheckBox(EMapEditorAction action, FString GroupName);
 
 private:
 	FReply StartTool(const FString& ToolTypeIdentifier);
