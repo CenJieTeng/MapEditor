@@ -81,6 +81,11 @@ void FMapEditorEdMode::Render(const FSceneView* View, FViewport* Viewport, FPrim
 	}
 }
 
+bool FMapEditorEdMode::CanAutoSave() const
+{
+	return ToolsContext->ToolManager->HasAnyActiveTool() == false;
+}
+
 bool FMapEditorEdMode::UsesToolkits() const
 {
 	return true;
