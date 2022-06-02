@@ -98,8 +98,15 @@ protected:
 	EMapEditorAction CurAction;
 
 private:
+	UPROPERTY()
 	UStaticMesh* DefaultMesh;
+
+	UPROPERTY()
 	UMaterialInterface* DefaultMaterial;
+
+	UPROPERTY()
 	UPreviewMesh* PreviewMesh;
+
+	UPROPERTY()
 	UMaterialInterface* PreviewMaterial;
 };
