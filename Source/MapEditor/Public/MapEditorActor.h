@@ -25,12 +25,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	inline int GetBlockIdCount() const { return BlockIdCount; }
-	inline void SetBlockIdCount(int InValue) { BlockIdCount = InValue; }
-
 private:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* StaticMesh;
-
-	int BlockIdCount;
 };

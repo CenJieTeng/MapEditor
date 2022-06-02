@@ -38,6 +38,15 @@ public:
 	UPROPERTY(EditAnywhere, NonTransactional, Category = Options)
 	bool bShowPreviewMesh = true;
 
+	UPROPERTY(EditAnywhere, NonTransactional, Category = Options, meta = (UIMin = "1", UIMax = "10", ClampMin = "1", ClampMax = "100"))
+	int x = 1;
+
+	UPROPERTY(EditAnywhere, NonTransactional, Category = Options, meta = (UIMin = "1", UIMax = "10", ClampMin = "1", ClampMax = "100"))
+	int y = 1;
+
+	UPROPERTY(EditAnywhere, NonTransactional, Category = Options, meta = (UIMin = "1", UIMax = "10", ClampMin = "1", ClampMax = "100"))
+	int z = 1;
+
 	UPROPERTY(EditAnywhere, NonTransactional, Category = Material)
 	TWeakObjectPtr<UMaterialInterface> CustomMaterial;
 
@@ -75,7 +84,7 @@ public:
 	virtual void SetAction(EMapEditorAction InAction);
 
 protected:
-	virtual void GenerateMesh(FDynamicMesh3* OutMesh) const;
+	virtual void GenerateMesh(FDynamicMesh3* OutMesh, FVector3d Size) const;
 	virtual void UpdatePreviewMesh();
 
 protected:

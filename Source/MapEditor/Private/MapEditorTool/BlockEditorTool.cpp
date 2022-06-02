@@ -15,6 +15,46 @@
 //#include "Generators/BoxSphereGenerator.h"
 //#include "Generators/DiscMeshGenerator.h"
 
+FVector NormalToAxisDirection(FVector vector, FVector normal)
+{
+	if (normal.X != 0)
+	{
+		if (normal.X > 0)
+		{
+			return vector * FVector(1.0f, -1.0f, 1.0f);
+		}
+		else
+		{
+			return vector * FVector(-1.0f, 1.0f, 1.0f);
+		}
+	}
+	if (normal.Y != 0)
+	{
+		if (normal.Y > 0)
+		{
+			return vector.RotateAngleAxis(-90.0, FVector(0, 0, 1)) * FVector(1.0f, -1.0f, 1.0f);
+		}
+		else
+		{
+			return vector.RotateAngleAxis(90.0, FVector(0, 0, 1)) * FVector(1.0f, -1.0f, 1.0f);
+		}
+	}
+	if (normal.Z != 0)
+	{
+		if (normal.Z > 0)
+		{
+			return vector.RotateAngleAxis(-90, FVector(0, 1, 0)).RotateAngleAxis(-90, FVector(0, 0, 1));
+		}
+		else
+		{
+			return vector.RotateAngleAxis(90.0, FVector(0, 1, 0)).RotateAngleAxis(-90, FVector(0, 0, 1));
+		}
+	}
+
+	return normal;
+	//return FVector(1.0f, 1.0f, 1.0f);
+}
+
 bool UBlockEditorToolBuilder::CanBuildTool(const FToolBuilderState& SceneState) const
 {
 	return (AssetAPI != nullptr);
@@ -100,23 +140,40 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 			{
 				case EMapEditorAction::add:
 				{
-					FName ComponentName = FName(FString::FromInt(MapEditorActor->GetBlockIdCount()));
-					FVector NewLocationOffset = (100 * Result.Normal);
 					GEditor->BeginTransaction(FText::FromString("Add Block"));
 					MapEditorActor->Modify();
-					UStaticMeshComponent* Component = NewObject<UStaticMeshComponent>(MapEditorActor.Get(), ComponentName, RF_Transactional);
-					Component->SetStaticMesh(DefaultMesh);
-					if (Properties->CustomMaterial.IsValid())
+					for (int x = 1; x <= Properties->x; x++)
 					{
-						Component->SetMaterial(0, Properties->CustomMaterial.Get());
+						for (int y = 1; y <= Properties->y; y++)
+						{
+							for (int z = 1; z <= Properties->z; z++)
+							{
+								
+								FVector Normal = FVector((int)Result.Normal.X, (int)Result.Normal.Y, (int)Result.Normal.Z);
+								FVector NewLocationOffset = NormalToAxisDirection(FVector((x - 1), (y - 1), (z - 1)), Normal) * 100 + Normal * 100;
+								FVector NewLocation = Result.Component->GetComponentLocation() + NewLocationOffset;
+								FVector Coord = (NewLocation - MapEditorActor->GetActorLocation()) / 100;
+								Coord = FVector(FMath::RoundToInt(Coord.X), FMath::RoundToInt(Coord.Y), FMath::RoundToInt(Coord.Z));
+								UE_LOG(LogTemp, Warning, TEXT("Block coord %f %f %f"), Coord.X, Coord.Y, Coord.Z);
+
+								//FName ComponentName = FName(FString::FromInt(MapEditorActor->GetBlockIdCount()));
+								FName ComponentName = FName(FString::FromInt(Coord.X * 1000 * 1000) + FString::FromInt(Coord.Y * 1000) + FString::FromInt(Coord.Z));
+								UStaticMeshComponent* Component = NewObject<UStaticMeshComponent>(MapEditorActor.Get(), ComponentName, RF_Transactional);
+								Component->SetStaticMesh(DefaultMesh);
+								if (Properties->CustomMaterial.IsValid())
+								{
+									Component->SetMaterial(0, Properties->CustomMaterial.Get());
+								}
+								else {
+									Component->SetMaterial(0, DefaultMaterial);
+								}
+								Component->SetWorldLocation(NewLocation);
+								Component->RegisterComponent();
+								MapEditorActor->AddInstanceComponent(Component);
+								//MapEditorActor->SetBlockIdCount(MapEditorActor->GetBlockIdCount() + 1);
+							}
+						}
 					}
-					else {
-						Component->SetMaterial(0, DefaultMaterial);
-					}
-					Component->SetWorldLocation(Result.Component->GetComponentLocation() + NewLocationOffset);
-					Component->RegisterComponent();
-					MapEditorActor->AddInstanceComponent(Component);
-					MapEditorActor->SetBlockIdCount(MapEditorActor->GetBlockIdCount() + 1);
 					GEditor->EndTransaction();
 					break;
 				}
@@ -208,10 +265,10 @@ void UBlockEditorTool::OnEndHover()
 {
 }
 
-void UBlockEditorTool::GenerateMesh(FDynamicMesh3* OutMesh) const
+void UBlockEditorTool::GenerateMesh(FDynamicMesh3* OutMesh, FVector3d Size) const
 {
 	FGridBoxMeshGenerator BoxGen;
-	BoxGen.Box = FOrientedBox3d(FVector3d::Zero(), 0.5 * FVector3d(100.f, 100.f, 100.0f));
+	BoxGen.Box = FOrientedBox3d(FVector3d::Zero(), 0.5 * Size);
 	BoxGen.Generate();
 	OutMesh->Copy(&BoxGen);
 }
@@ -249,6 +306,6 @@ void UBlockEditorTool::UpdatePreviewMesh()
 	}
 
 	FDynamicMesh3 NewMesh;
-	GenerateMesh(&NewMesh);
+	GenerateMesh(&NewMesh, FVector3d(100.0f, 100.0f, 100.0f));
 	PreviewMesh->UpdatePreview(&NewMesh);
 }
