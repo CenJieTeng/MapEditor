@@ -4,6 +4,8 @@
 #include "MapEditorEdModeToolkit.h"
 #include "Toolkits/ToolkitManager.h"
 #include "EditorModeManager.h"
+#include "Input/CursorReply.h"
+#include "GameFramework/PlayerController.h"
 
 #include "MapEditorTool/BlockEditorTool.h"
 
@@ -131,6 +133,26 @@ bool FMapEditorEdMode::InputKey(FEditorViewportClient* ViewportClient, FViewport
 	if (Key == EKeys::Four && Event == EInputEvent::IE_Pressed && ViewportClient->IsCtrlPressed())
 	{
 		((FMapEditorEdModeToolkit*)Toolkit.Get())->ToggleCheckBox(EMapEditorAction::replace, "Group1");
+	}
+
+	if ((Key == EKeys::LeftControl || Key == EKeys::RightControl) && Event == EInputEvent::IE_Pressed)
+	{
+		UBlockEditorTool* CurTool = (UBlockEditorTool*)((FMapEditorEdModeToolkit*)Toolkit.Get())->GetMapEditorMode()->GetToolManager()->GetActiveTool(EToolSide::Left);
+		if (CurTool != nullptr)
+		{
+			CurTool->SetPreviewVisiable(false);
+		}
+		ViewportClient->SetRequiredCursorOverride(true, EMouseCursor::EyeDropper);
+	}
+
+	if ((Key == EKeys::LeftControl || Key == EKeys::RightControl) && Event == EInputEvent::IE_Released)
+	{
+		UBlockEditorTool* CurTool = (UBlockEditorTool*)((FMapEditorEdModeToolkit*)Toolkit.Get())->GetMapEditorMode()->GetToolManager()->GetActiveTool(EToolSide::Left);
+		if (CurTool != nullptr)
+		{
+			CurTool->SetPreviewVisiable(true);
+		}
+		ViewportClient->SetRequiredCursorOverride(true, EMouseCursor::Crosshairs);
 	}
 
 	bool bHandled = FEdMode::InputKey(ViewportClient, Viewport, Key, Event);

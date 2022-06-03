@@ -15,6 +15,8 @@
 //#include "Generators/BoxSphereGenerator.h"
 //#include "Generators/DiscMeshGenerator.h"
 
+#include <iomanip>
+
 FVector NormalToAxisDirection(FVector vector, FVector normal)
 {
 	if (normal.X != 0)
@@ -53,6 +55,13 @@ FVector NormalToAxisDirection(FVector vector, FVector normal)
 
 	return normal;
 	//return FVector(1.0f, 1.0f, 1.0f);
+}
+
+FString FillString(int32 InValue, int32 num)
+{
+	std::stringstream ss;
+	ss << std::setw(num) << std::setfill('0') << InValue;
+	return FString(ss.str().c_str());
 }
 
 bool UBlockEditorToolBuilder::CanBuildTool(const FToolBuilderState& SceneState) const
@@ -136,6 +145,13 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 
 		if (Result.Actor.IsValid() && Result.Component.IsValid() && Result.Actor->GetUniqueID() == MapEditorActor->GetUniqueID() && bHitWorld)
 		{
+			FViewport* viewport = GEditor->GetActiveViewport();
+			if (viewport && IsCtrlDown(viewport))
+			{
+				Properties->CustomMaterial = Result.Component->GetMaterial(0);
+				return;
+			}
+
 			switch (CurAction)
 			{
 				case EMapEditorAction::add:
@@ -155,9 +171,8 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 								FVector Coord = (NewLocation - MapEditorActor->GetActorLocation()) / 100;
 								Coord = FVector(FMath::RoundToInt(Coord.X), FMath::RoundToInt(Coord.Y), FMath::RoundToInt(Coord.Z));
 								UE_LOG(LogTemp, Warning, TEXT("Block coord %f %f %f"), Coord.X, Coord.Y, Coord.Z);
-
-								//FName ComponentName = FName(FString::FromInt(MapEditorActor->GetBlockIdCount()));
-								FName ComponentName = FName(FString::FromInt(Coord.X * 1000 * 1000) + FString::FromInt(Coord.Y * 1000) + FString::FromInt(Coord.Z));
+								
+								FName ComponentName = FName(FString("x") + FillString(Coord.X, 4) + FString("y") +  *FillString(Coord.Y, 4) + FString("z") + *FillString(Coord.Z, 4));
 								UStaticMeshComponent* Component = NewObject<UStaticMeshComponent>(MapEditorActor.Get(), ComponentName, RF_Transactional);
 								Component->SetStaticMesh(DefaultMesh);
 								if (Properties->CustomMaterial.IsValid())
@@ -170,7 +185,6 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 								Component->SetWorldLocation(NewLocation);
 								Component->RegisterComponent();
 								MapEditorActor->AddInstanceComponent(Component);
-								//MapEditorActor->SetBlockIdCount(MapEditorActor->GetBlockIdCount() + 1);
 							}
 						}
 					}
@@ -286,6 +300,11 @@ void UBlockEditorTool::SetMapEditorActor(TWeakObjectPtr<AMapEditorActor> Actor)
 void UBlockEditorTool::SetAction(EMapEditorAction InAction)
 {
 	CurAction = InAction;
+}
+
+void UBlockEditorTool::SetPreviewVisiable(bool InVisiable)
+{
+	Properties->bShowPreviewMesh = InVisiable;
 }
 
 void UBlockEditorTool::UpdatePreviewMesh()

@@ -82,6 +82,7 @@ public:
 	virtual void SetWorld(UWorld* World);
 	virtual void SetMapEditorActor(TWeakObjectPtr<AMapEditorActor> Actor);
 	virtual void SetAction(EMapEditorAction InAction);
+	virtual void SetPreviewVisiable(bool InVisiable);
 
 protected:
 	virtual void GenerateMesh(FDynamicMesh3* OutMesh, FVector3d Size) const;
