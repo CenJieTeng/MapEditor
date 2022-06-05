@@ -7,6 +7,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "InteractiveToolManager.h"
 #include "BaseBehaviors/MouseHoverBehavior.h"
+#include "LevelEditor.h"
 
 //#include "Generators/SweepGenerator.h"
 #include "Generators/GridBoxMeshGenerator.h"
@@ -185,6 +186,10 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 								Component->SetWorldLocation(NewLocation);
 								Component->RegisterComponent();
 								MapEditorActor->AddInstanceComponent(Component);
+								GEditor->ResetAllSelectionSets();
+								GEditor->SelectActor(MapEditorActor.Get(), true, true, false);
+								FLevelEditorModule& LevelEditor = FModuleManager::GetModuleChecked<FLevelEditorModule>("LevelEditor");
+								LevelEditor.OnComponentsEdited().Broadcast();
 							}
 						}
 					}
@@ -193,9 +198,16 @@ void UBlockEditorTool::OnClicked(const FInputDeviceRay& ClickPos)
 				}
 				case EMapEditorAction::del:
 				{
+					if (Result.Component->GetName() == "StaticMesh")
+						return;
+
 					GEditor->BeginTransaction(FText::FromString("Del Block"));
 					MapEditorActor->Modify();
 					Result.Component->DestroyComponent();
+					GEditor->ResetAllSelectionSets();
+					GEditor->SelectActor(MapEditorActor.Get(), true, true, false);
+					FLevelEditorModule& LevelEditor = FModuleManager::GetModuleChecked<FLevelEditorModule>("LevelEditor");
+					LevelEditor.OnComponentsEdited().Broadcast();
 					GEditor->EndTransaction();
 					break;
 				}

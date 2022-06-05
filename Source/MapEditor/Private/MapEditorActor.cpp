@@ -27,6 +27,8 @@ AMapEditorActor::AMapEditorActor()
 	{
 		StaticMesh->SetMaterial(0, DefaultMaterial.Object);
 	}
+
+	SetFlags(EObjectFlags::RF_Transactional);
 }
 
 void AMapEditorActor::PostRegisterAllComponents()
