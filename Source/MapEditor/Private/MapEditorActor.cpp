@@ -16,7 +16,8 @@ AMapEditorActor::AMapEditorActor()
 	RootComponent = SceneComponent;
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultMesh(TEXT("/Game/StarterContent/Shapes/Shape_Cube.Shape_Cube"));
-	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
+	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("x0000y0000z0000"));
+	StaticMesh->SetCustomPrimitiveDataVector3(0, FVector::ZeroVector);
 	StaticMesh->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	if (DefaultMesh.Succeeded())
 	{
@@ -35,6 +36,15 @@ void AMapEditorActor::PostRegisterAllComponents()
 {
 	FNavigationSystem::OnActorRegistered(*this);
 
+	for (auto v : this->GetComponents())
+	{
+		UStaticMeshComponent* Component = Cast<UStaticMeshComponent>(v);
+		if (Component == nullptr)
+			continue;
+		FVector Coord = Component->GetRelativeLocation() / 100;
+		Coord = FVector(FMath::RoundToInt(Coord.X), FMath::RoundToInt(Coord.Y), FMath::RoundToInt(Coord.Z));
+		Component->SetCustomPrimitiveDataVector3(0, Coord);
+	}
 }
 
 // Called when the game starts or when spawned
