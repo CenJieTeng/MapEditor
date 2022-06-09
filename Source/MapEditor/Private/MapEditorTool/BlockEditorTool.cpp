@@ -311,7 +311,7 @@ void UBlockEditorTool::SetPreviewVisiable(bool InVisiable)
 
 FString UBlockEditorTool::GetConfigPath(FString FileName)
 {
-	return FPaths::ProjectContentDir() + "MapEditor/MapData/" + FileName + ".json";
+	return FPaths::ProjectPluginsDir() + "MapEditor/MapData/" + FileName + ".json";
 }
 
 void UBlockEditorTool::ExportConfig(FString FileName)
