@@ -10,6 +10,7 @@
 #include "Widgets/Input/SComboBox.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/StaticMeshActor.h"
+#include "Misc/FileHelper.h"
 #include "MapEditorActor.h"
 #include "EditorModeManager.h"
 
@@ -29,14 +30,6 @@ FMapEditorEdModeToolkit::~FMapEditorEdModeToolkit()
 
 void FMapEditorEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 {
-	struct Locals
-	{
-		static bool IsWidgetEnabled()
-		{
-			return true;
-		}
-	};
-
 	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
 	FDetailsViewArgs DetailsViewArgs(
@@ -63,6 +56,8 @@ void FMapEditorEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHo
 	CurSelect = -1;
 	CurAction = EMapEditorAction::none;
 
+	StartTool("BlockEditorTool");
+
 	AddActorHandler = GEditor->OnLevelActorAdded().AddRaw(this, &FMapEditorEdModeToolkit::HandleLevelActorAdded);
 	deleteActorHandler = GEditor->OnLevelActorDeleted().AddRaw(this, &FMapEditorEdModeToolkit::HandleLevelActorDeleted);
 
@@ -72,16 +67,14 @@ void FMapEditorEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHo
 		});
 
 	SAssignNew(ToolkitWidget, SScrollBarTrack)
-		.IsEnabled_Static(&Locals::IsWidgetEnabled)
 		.TopSlot()
 		[
 			SNew(SVerticalBox)
 			+ SVerticalBox::Slot()
 			.AutoHeight()
-			.Padding(20)
+			.Padding(10)
 			[
 				SNew(SBorder)
-				.BorderImage(FCoreStyle::Get().GetBrush("Debug.Border"))
 				[
 					SNew(SWrapBox)
 					.PreferredSize(300.0f)
@@ -109,7 +102,7 @@ void FMapEditorEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHo
 			]
 			+ SVerticalBox::Slot()
 			.AutoHeight()
-			.Padding(20)
+			.Padding(10)
 			[
 				SNew(SHorizontalBox)
 				+ SHorizontalBox::Slot()
@@ -154,10 +147,91 @@ void FMapEditorEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHo
 					]
 				]
 			]
-			+ SVerticalBox::Slot().HAlign(HAlign_Fill).FillHeight(1.f)
+			+ SVerticalBox::Slot()
+			.FillHeight(0.25)
+			.Padding(10)
+			[
+				SNew(SBorder)
 				[
-					DetailsView->AsShared()
+					SNew(SVerticalBox)
+					+SVerticalBox::Slot()
+					[
+						SNew(SHorizontalBox)
+						+ SHorizontalBox::Slot()
+						.Padding(10, 5)
+						[
+							SNew(SButton)
+							.HAlign(EHorizontalAlignment::HAlign_Center)
+							.VAlign(EVerticalAlignment::VAlign_Center)
+							.Text(FText::FromString("Import config"))
+							.OnClicked_Lambda([this]() {
+							UBlockEditorTool* CurTool = (UBlockEditorTool*)GetMapEditorMode()->GetToolManager()->GetActiveTool(EToolSide::Left);
+								if (ConfigFileWidget->GetText().IsEmpty())
+								{
+									FMessageDialog::Open(EAppMsgType::Ok, FText::FromString("Config filename is empty"));
+									return FReply::Handled();
+								}
+								if (CurTool != nullptr)
+								{
+									CurTool->ImportConfig(ConfigFileWidget->GetText().ToString());
+								}
+								return FReply::Handled();
+							})
+						]
+						+ SHorizontalBox::Slot()
+						.Padding(10, 5)
+						[
+							SNew(SButton)
+							.HAlign(EHorizontalAlignment::HAlign_Center)
+							.VAlign(EVerticalAlignment::VAlign_Center)
+							.Text(FText::FromString("Export config"))
+							.OnClicked_Lambda([this]() {
+							UBlockEditorTool* CurTool = (UBlockEditorTool*)GetMapEditorMode()->GetToolManager()->GetActiveTool(EToolSide::Left);
+							if (ConfigFileWidget->GetText().IsEmpty())
+							{
+								FMessageDialog::Open(EAppMsgType::Ok, FText::FromString("Config filename is empty"));
+								return FReply::Handled();
+							}
+							FString Path = UBlockEditorTool::GetConfigPath(ConfigFileWidget->GetText().ToString());
+							if (FPaths::FileExists(Path))
+							{
+								EAppReturnType::Type Ret = FMessageDialog::Open(EAppMsgType::OkCancel, FText::FromString("Config file is already exist, replace the file?"));
+								if (Ret == EAppReturnType::Type::Cancel)
+									return FReply::Handled();
+							}
+							if (CurTool != nullptr)
+							{
+								CurTool->ExportConfig(ConfigFileWidget->GetText().ToString());
+							}
+								return FReply::Handled();
+							})
+						]
+					]
+					+ SVerticalBox::Slot()
+					[
+						SNew(SHorizontalBox)
+						+ SHorizontalBox::Slot()
+						.HAlign(EHorizontalAlignment::HAlign_Center)
+						.VAlign(EVerticalAlignment::VAlign_Center)
+						.FillWidth(0.5)
+						[
+							SNew(STextBlock)
+							.Text(FText::FromString("config file"))
+						]
+						+ SHorizontalBox::Slot()
+						.VAlign(EVerticalAlignment::VAlign_Center)
+						.Padding(0, 0, 10, 0)
+						[
+							SAssignNew(ConfigFileWidget, SEditableTextBox)
+						]
+					]
 				]
+			]
+			+ SVerticalBox::Slot()
+			.HAlign(HAlign_Fill).FillHeight(1.f)
+			[
+				DetailsView->AsShared()
+			]
 		];
 		
 	FModeToolkit::Init(InitToolkitHost);
@@ -239,24 +313,7 @@ void FMapEditorEdModeToolkit::HandleCheckBoxChange(ECheckBoxState InState, EMapE
 		CheckBox->SetIsChecked(ECheckBoxState::Unchecked);
 	}
 	CurAction = action;
-
-	switch (CurAction)
-	{
-	case EMapEditorAction::none:
-	{
-		EndTool(EToolShutdownType::Completed);
-		break;
-	}
-	case EMapEditorAction::add:
-	case EMapEditorAction::del:
-	case EMapEditorAction::replace:
-	{
-		StartTool("BlockEditorTool");
-		break;
-	}
-	default:
-		break;
-	}
+	HandleSelectEditorMapActor();
 }
 
 FReply FMapEditorEdModeToolkit::StartTool(const FString& ToolTypeIdentifier)

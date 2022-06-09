@@ -53,4 +53,6 @@ private:
 	int CurSelect;
 	FDelegateHandle AddActorHandler;
 	FDelegateHandle deleteActorHandler;
+
+	TSharedPtr<SEditableTextBox> ConfigFileWidget;
 };

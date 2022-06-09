@@ -43,6 +43,7 @@ public class MapEditor : ModuleRules
 				"LevelEditor",
 				"InteractiveToolsFramework",
 				"EditorInteractiveToolsFramework",
+				"Json",
 
 				"MeshConversion",
 				"MeshDescription",

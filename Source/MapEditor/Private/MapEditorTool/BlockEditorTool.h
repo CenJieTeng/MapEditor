@@ -79,14 +79,20 @@ public:
 	virtual bool OnUpdateHover(const FInputDeviceRay& DevicePos) override;
 	virtual void OnEndHover() override;
 
-	virtual void SetWorld(UWorld* World);
-	virtual void SetMapEditorActor(TWeakObjectPtr<AMapEditorActor> Actor);
-	virtual void SetAction(EMapEditorAction InAction);
-	virtual void SetPreviewVisiable(bool InVisiable);
+	void SetWorld(UWorld* World);
+	void SetMapEditorActor(TWeakObjectPtr<AMapEditorActor> Actor);
+	void SetAction(EMapEditorAction InAction);
+	void SetPreviewVisiable(bool InVisiable);
+
+	static FString GetConfigPath(FString FileName);
+	void ExportConfig(FString FileName);
+	void ImportConfig(FString FileName);
 
 protected:
 	virtual void GenerateMesh(FDynamicMesh3* OutMesh, FVector3d Size) const;
 	virtual void UpdatePreviewMesh();
+
+	void AddBlock(FVector Location, UMaterialInterface* Material = nullptr);
 
 protected:
 	UPROPERTY()
