@@ -3,6 +3,9 @@
 #### 介绍
 一个虚幻引擎地图编辑插件，类似我的世界里面的放置方块。
 
+#### 使用教程
+https://www.bilibili.com/video/BV1HF41177wm?share_source=copy_web
+
 #### Todo List
 1. ~~合并导出静态网格体资源~~ (引擎自带)
 2. 支持自定义材质 ✔
